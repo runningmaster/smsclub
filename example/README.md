@@ -1,3 +1,5 @@
+This is a small example of using that package in CLI app.
+
 ```
 USAGE:
 main <command> [--flag=<value>,...]
