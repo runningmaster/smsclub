@@ -96,7 +96,7 @@ func main() {
 				log.Fatal(err)
 			}
 			sms = smsclub.New(splitUser(flagUser))
-			err := cmd.run()
+			err = cmd.run()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 				usage()
