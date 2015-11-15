@@ -65,18 +65,7 @@ type command struct {
 
 func init() {
 	flag.Usage = usage
-	for _, cmd := range commands {
-		cmd.flags.StringVar(&flagUser, "user", "", "--user=string:string - username:password")
-		switch {
-		case cmd.name == apiSend:
-			cmd.flags.StringVar(&flagText, "text", "", "--text=string - message of SMS")
-			cmd.flags.StringVar(&flagFrom, "from", "", "--from=string - alphaname")
-			cmd.flags.StringVar(&flagListTo, "to", "", "--to=string,... - list of phone numbers (comma-separated)")
-			cmd.flags.DurationVar(&flagTime, "lt", 0, "--lt=int - lifetime om SMS in minutes (default 0)")
-		case cmd.name == apiStatus:
-			cmd.flags.StringVar(&flagListID, "id", "", "--id=string,... - list of SMS ID from 'send' command (comma-separated)")
-		}
-	}
+	setCommandFlags()
 }
 
 func main() {
@@ -129,6 +118,21 @@ func usage() {
 		fmt.Fprintln(w, "")
 	}
 	os.Exit(2)
+}
+
+func setCommandFlags() {
+	for _, cmd := range commands {
+		cmd.flags.StringVar(&flagUser, "user", "", "--user=string:string - username:password")
+		switch {
+		case cmd.name == apiSend:
+			cmd.flags.StringVar(&flagText, "text", "", "--text=string - message of SMS")
+			cmd.flags.StringVar(&flagFrom, "from", "", "--from=string - alphaname")
+			cmd.flags.StringVar(&flagListTo, "to", "", "--to=string,... - list of phone numbers (comma-separated)")
+			cmd.flags.DurationVar(&flagTime, "lt", 0, "--lt=int - lifetime om SMS in minutes (default 0)")
+		case cmd.name == apiStatus:
+			cmd.flags.StringVar(&flagListID, "id", "", "--id=string,... - list of SMS ID from 'send' command (comma-separated)")
+		}
+	}
 }
 
 func runBalance() error {
