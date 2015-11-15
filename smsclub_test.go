@@ -42,7 +42,7 @@ func (t testMethod) newServer() *httptest.Server {
 	return httptest.NewServer(t.hfnc)
 }
 
-func testFindURL(m methodAPI) string {
+func testMakeURL(m methodAPI) string {
 	return fmt.Sprintf(mapper[m])
 }
 
@@ -61,15 +61,14 @@ func testResult(t *testing.T, got, want string) {
 func TestNew(t *testing.T) {
 	testSMSer = New("user", "pass")
 	testResult(t, fmt.Sprintf("%s", testSMSer), "user pass 0")
+	makeURL = testMakeURL
 }
 
 func TestBalance(t *testing.T) {
 	tm := testMethods[mBalance]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-
 	mapper[mBalance] = ts.URL
-	makeURL = testFindURL
 
 	bln, cre, err := testSMSer.Balance()
 	testError(t, err)
@@ -90,9 +89,7 @@ func TestSend(t *testing.T) {
 	tm := testMethods[mSend]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-
 	mapper[mSend] = ts.URL
-	makeURL = testFindURL
 
 	res, err := testSMSer.Send("Test", "Test", "0123456789")
 	testError(t, err)
@@ -105,9 +102,7 @@ func TestStatus(t *testing.T) {
 	tm := testMethods[mStatus]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-
 	mapper[mStatus] = ts.URL
-	makeURL = testFindURL
 
 	res, err := testSMSer.Status()
 	testError(t, err)
