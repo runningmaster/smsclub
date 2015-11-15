@@ -88,9 +88,13 @@ func main() {
 		usage()
 	}
 
+	var err error
 	for _, cmd := range commands {
 		if cmd.name == args[0] {
-			cmd.flags.Parse(args[1:])
+			err = cmd.flags.Parse(args[1:])
+			if err != nil {
+				log.Fatal(err)
+			}
 			sms = smsclub.New(splitUser(flagUser))
 			err := cmd.run()
 			if err != nil {
@@ -138,7 +142,11 @@ func runBalance() error {
 }
 
 func runSend() error {
-	sms.LifeTime(flagTime)
+	err := sms.LifeTime(flagTime)
+	if err != nil {
+		return err
+	}
+
 	res, err := sms.Send(flagText, flagFrom, strings.Split(flagListTo, ",")...)
 	if err != nil {
 		return err
