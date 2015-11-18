@@ -67,7 +67,7 @@ type client struct {
 
 func (c *client) makeForm(f url.Values) (url.Values, error) {
 	if c.user == "" || c.pass == "" {
-		return nil, fmt.Errorf("smser: username or password is empty")
+		return nil, fmt.Errorf("smsclub: username or password is empty")
 	}
 	if f == nil {
 		f = url.Values{}
@@ -98,7 +98,7 @@ func (c *client) callAPI(m methodAPI, v url.Values) ([]string, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("smser: server returns %d %s", res.StatusCode, res.Status)
+		return nil, fmt.Errorf("smsclub: server returns %d %s", res.StatusCode, res.Status)
 	}
 
 	bts, err := ioutil.ReadAll(res.Body)
@@ -138,7 +138,7 @@ func (c *client) Balance() (float64, float64, error) {
 
 func (c *client) LifeTime(d time.Duration) error {
 	if d < 0 {
-		return fmt.Errorf("smser: invalid duration value %d", d)
+		return fmt.Errorf("smsclub: invalid duration value %d", d)
 	}
 	c.ltime = int(d.Minutes())
 	return nil
