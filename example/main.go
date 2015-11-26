@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -174,13 +175,14 @@ func runStatus() error {
 	return nil
 }
 
-func splitUser(user string) (name, pass string) {
-	namepass := strings.Split(user, ":")
-	if len(namepass) == 2 {
-		name = namepass[0]
-		pass = namepass[1]
+func splitUser(rawurl string) (string, string) {
+	var user, pass string
+	u, err := url.Parse(fmt.Sprintf("scheme://%s@host:port", rawurl))
+	if err == nil && u.User != nil {
+		user = u.User.Username()
+		pass, _ = u.User.Password()
 	}
-	return name, pass
+	return user, pass
 }
 
 func appName() string {
