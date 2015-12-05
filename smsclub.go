@@ -45,7 +45,7 @@ type SMSer interface {
 	LifeTime(d time.Duration) error
 
 	// Send sends SMS text message from "alphaName" to recipients.
-	Send(text, from string, to ...string) ([]string, error)
+	Send(from, text string, to ...string) ([]string, error)
 
 	// Status gets list of SMS identifiers and returns statuses for ones.
 	Status(ids ...string) ([]string, error)
@@ -144,7 +144,7 @@ func (c *client) LifeTime(d time.Duration) error {
 	return nil
 }
 
-func (c *client) Send(text, from string, to ...string) ([]string, error) {
+func (c *client) Send(from, text string, to ...string) ([]string, error) {
 	toBase64 := func(s string) string {
 		return base64.StdEncoding.EncodeToString([]byte(s))
 	}
@@ -156,8 +156,8 @@ func (c *client) Send(text, from string, to ...string) ([]string, error) {
 	}
 
 	form := url.Values{
-		"text": []string{toBase64(toWin1251(text))},
 		"from": []string{from},
+		"text": []string{toBase64(toWin1251(text))},
 		"to":   []string{strings.Join(to, ";")},
 	}
 
