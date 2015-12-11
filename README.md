@@ -11,5 +11,5 @@ $ go get github.com/runningmaster/smsclub
 Send SMS to friends:
 ```
 sms := smsclub.New("user", "pass")
-sms.Send("message text", "alphaname", "380673408275", "380975243263")
+sms.Send("alphaname", "message text", "380673408275", "380975243263")
 ```

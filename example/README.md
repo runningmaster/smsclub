@@ -9,8 +9,8 @@ commands:
 
 	send - send SMS to recipients
 	--user=string:string - username:password
-	--text=string - message of SMS
 	--from=string - alphaname
+	--text=string - message of SMS
 	--to=string,... - list of phone numbers (comma-separated)
 	--lt=int - lifetime om SMS in minutes (default 0)
 

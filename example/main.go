@@ -152,7 +152,7 @@ func runSend() error {
 		return err
 	}
 
-	res, err := sms.Send(flagText, flagFrom, strings.Split(flagListTo, ",")...)
+	res, err := sms.Send(flagFrom, flagText, strings.Split(flagListTo, ",")...)
 	if err != nil {
 		return err
 	}
