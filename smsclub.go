@@ -114,7 +114,7 @@ func (c *client) callAPI(m methodAPI, v url.Values) ([]string, error) {
 		out = append(out, s)
 	}
 
-	if m != mBalance && !strings.HasPrefix(string(bts), "=") {
+	if m != mBalance && !strings.Contains(string(bts), "=IDS") {
 		return nil, fmt.Errorf("%s", strings.Join(out, "\n"))
 	}
 
