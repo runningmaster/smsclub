@@ -2,6 +2,7 @@ package smsclub
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -49,6 +50,9 @@ type SMSer interface {
 
 	// Status gets list of SMS identifiers and returns statuses for ones.
 	Status(ids ...string) ([]string, error)
+
+	// Timeout sets timeout for calls Balance, Send and Status
+	Timeout(d time.Duration) error
 }
 
 // New returns SMSer interface
@@ -60,9 +64,10 @@ func New(user, pass string) SMSer {
 }
 
 type client struct {
-	user  string
-	pass  string
-	ltime int
+	user    string
+	pass    string
+	ltime   int
+	timeout time.Duration
 }
 
 func (c *client) makeForm(f url.Values) (url.Values, error) {
@@ -80,22 +85,39 @@ func (c *client) makeForm(f url.Values) (url.Values, error) {
 	return f, nil
 }
 
+func closeBody(c io.Closer) {
+	if c == nil {
+		return
+	}
+	err := c.Close()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (c *client) callAPI(m methodAPI, v url.Values) ([]string, error) {
 	frm, err := c.makeForm(v)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := http.PostForm(makeURL(m), frm)
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
+	req, err := http.NewRequest("POST", makeURL(m), strings.NewReader(frm.Encode()))
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if c.timeout > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+		defer cancel()
+		req = req.WithContext(ctx)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer closeBody(res.Body)
 
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("smsclub: server returns %d %s", res.StatusCode, res.Status)
@@ -190,4 +212,12 @@ func (c *client) Status(ids ...string) ([]string, error) {
 
 func (c *client) String() string {
 	return fmt.Sprintf("%s %s %d", c.user, c.pass, c.ltime)
+}
+
+func (c *client) Timeout(d time.Duration) error {
+	if d < 0 {
+		return fmt.Errorf("smsclub: invalid duration value %d", d)
+	}
+	c.timeout = d
+	return nil
 }
