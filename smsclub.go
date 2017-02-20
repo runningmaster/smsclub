@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	epoint = "https://gate.smsclub.mobi/http"
+	epoint = "https://gate.smsclub.mobi/token"
 	mapper = map[methodAPI]string{
 		mSend:    "httpsendsms",
 		mStatus:  "httpgetsmsstate",
