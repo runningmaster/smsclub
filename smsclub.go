@@ -136,12 +136,7 @@ func (c *client) callAPI(r *http.Request) ([]string, error) {
 		r = r.WithContext(ctx)
 	}
 
-	tr := &http.Transport{
-		TLSNextProto: nil,
-	}
-	cli := &http.Client{Transport: tr}
-
-	res, err := cli.Do(r)
+	res, err := http.DefaultClient.Do(r)
 	if err != nil || res == nil {
 		return nil, err
 	}
