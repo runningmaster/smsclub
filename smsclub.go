@@ -169,7 +169,7 @@ func (c *client) Balance() (float64, float64, error) {
 	}
 
 	var bal, cre float64
-	if len(res) == 2 {
+	if len(res) >= 2 {
 		bal, _ = strconv.ParseFloat(res[0], 64)
 		cre, _ = strconv.ParseFloat(res[1], 64)
 	}
