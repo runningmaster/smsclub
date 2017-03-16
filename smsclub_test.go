@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 )
 
 var (
@@ -30,7 +29,7 @@ var (
 			"STATE + STATE",
 		},
 	}
-	testSMSer SMSer // It inits in TestNew()
+	testSMSCluber SMSCluber // It inits in TestNew()
 )
 
 type testMethod struct {
@@ -40,10 +39,6 @@ type testMethod struct {
 
 func (t testMethod) newServer() *httptest.Server {
 	return httptest.NewServer(t.hfnc)
-}
-
-func testMakeURL(m methodAPI) string {
-	return fmt.Sprintf(mapper[m])
 }
 
 func testError(t *testing.T, err error) {
@@ -59,39 +54,32 @@ func testResult(t *testing.T, got, want string) {
 }
 
 func TestNew(t *testing.T) {
-	testSMSer = New("user", "pass")
-	testResult(t, fmt.Sprintf("%s", testSMSer), "user pass 0")
-	makeURL = testMakeURL
+	var err error
+	testSMSCluber, err = New(User("user"), Token("token"), Sender("alphaname"))
+	testError(t, err)
+	testResult(t, fmt.Sprintf("%s", testSMSCluber), "user token alphaname 0")
 }
 
 func TestBalance(t *testing.T) {
 	tm := testMethods[mBalance]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-	mapper[mBalance] = ts.URL
+	mapURL[mBalance] = ts.URL
 
-	bln, cre, err := testSMSer.Balance()
+	bln, cre, err := testSMSCluber.Balance()
 	testError(t, err)
 
 	got := strings.Join([]string{fmt.Sprintf("%.2f", bln), fmt.Sprintf("%.2f", cre)}, " + ")
 	testResult(t, got, want)
 }
 
-func TestLifeTime(t *testing.T) {
-	err := testSMSer.LifeTime(5 * time.Minute)
-	testError(t, err)
-	testResult(t, fmt.Sprintf("%s", testSMSer), "user pass 5")
-	_ = testSMSer.LifeTime(0 * time.Minute)
-	testResult(t, fmt.Sprintf("%s", testSMSer), "user pass 0")
-}
-
 func TestSend(t *testing.T) {
 	tm := testMethods[mSend]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-	mapper[mSend] = ts.URL
+	mapURL[mSend] = ts.URL
 
-	res, err := testSMSer.Send("Test", "Test", "0123456789")
+	res, err := testSMSCluber.Send("Test", "Test", "0123456789")
 	testError(t, err)
 
 	got := strings.Join(res, " + ")
@@ -102,11 +90,19 @@ func TestStatus(t *testing.T) {
 	tm := testMethods[mStatus]
 	ts, want := tm.newServer(), tm.want
 	defer ts.Close()
-	mapper[mStatus] = ts.URL
+	mapURL[mStatus] = ts.URL
 
-	res, err := testSMSer.Status()
+	res, err := testSMSCluber.Status()
 	testError(t, err)
 
 	got := strings.Join(res, " + ")
 	testResult(t, got, want)
 }
+
+//func TestLifeTime(t *testing.T) {
+//	err := testSMSCluber.LifeTime(5 * time.Minute)
+//	testError(t, err)
+//	testResult(t, fmt.Sprintf("%s", testSMSCluber), "user pass 5")
+//	_ = testSMSCluber.LifeTime(0 * time.Minute)
+//	testResult(t, fmt.Sprintf("%s", testSMSCluber), "user pass 0")
+//}
