@@ -3,12 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/runningmaster/smsclub"
 )
@@ -19,124 +15,45 @@ const (
 	apiStatus  = "status"
 )
 
-var (
-	apiUsage = map[string]string{
-		apiBalance: "get balance (and credit)",
-		apiSend:    "send SMS to recipients",
-		apiStatus:  "get SMS status",
-	}
-
-	cmdBalance = &command{
-		run:  runBalance,
-		name: apiBalance,
-		desc: apiUsage[apiBalance],
-	}
-	cmdSend = &command{
-		run:  runSend,
-		name: apiSend,
-		desc: apiUsage[apiSend],
-	}
-	cmdStatus = &command{
-		run:  runStatus,
-		name: apiStatus,
-		desc: apiUsage[apiStatus],
-	}
-	commands = []*command{
-		cmdBalance,
-		cmdSend,
-		cmdStatus,
-	}
-
-	flagUser   string
-	flagText   string
-	flagFrom   string
-	flagListTo string
-	flagListID string
-	flagTime   time.Duration
-
-	sms smsclub.SMSer
-)
-
-type command struct {
-	run   func() error
-	name  string
-	desc  string
-	flags flag.FlagSet
-}
-
-func init() {
-	flag.Usage = usage
-	setCommandFlags()
-}
-
 func main() {
+	flagCmd := flag.String("cmd", "", "v")
+	flagUser := flag.String("user", "", "v")
+	flagToken := flag.String("token", "", "v")
+	flagSender := flag.String("sender", "", "v")
+	flagText := flag.String("text", "", "v")
+	flagListTo := flag.String("to", "", "csv")
+	flagListID := flag.String("id", "", "csv")
+
 	flag.Parse()
-	log.SetFlags(0)
 
-	args := flag.Args()
-	if len(args) < 1 || args[0] == "help" {
-		usage()
+	sms, err := smsclub.New(
+		smsclub.User(*flagUser),
+		smsclub.Token(*flagToken),
+		smsclub.Sender(*flagSender),
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+		flag.Usage()
+		return
 	}
 
-	var err error
-	for _, cmd := range commands {
-		if cmd.name == args[0] {
-			err = cmd.flags.Parse(args[1:])
-			if err != nil {
-				log.Fatal(err)
-			}
-			sms = smsclub.New(splitUser(flagUser))
-			err = cmd.run()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
-				usage()
-			}
-			return
-		}
+	switch *flagCmd {
+	case apiBalance:
+		err = runBalance(sms)
+	case apiSend:
+		err = runSend(sms, *flagText, strings.Split(*flagListTo, ",")...)
+	case apiStatus:
+		err = runStatus(sms, strings.Split(*flagListID, ",")...)
+	default:
+		err = fmt.Errorf("unknown subcommand")
 	}
 
-	fmt.Fprintf(os.Stderr, "Unknown subcommand %q\n", args[0])
-	usage()
-}
-
-func usage() {
-	w := os.Stderr
-	fmt.Fprintln(w, "USAGE:")
-	fmt.Fprintln(w, appName(), "<command>", "[--flag=<value>,...]")
-	fmt.Fprintln(w, "commands:")
-	for _, cmd := range commands {
-		fmt.Fprintf(w, "\t%s - %s\n", cmd.name, cmd.desc)
-		fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("user").Usage)
-		switch {
-		case cmd.name == apiSend:
-			fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("text").Usage)
-			fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("from").Usage)
-			fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("to").Usage)
-			fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("lt").Usage)
-		case cmd.name == apiStatus:
-			fmt.Fprintf(w, "\t%s\n", cmd.flags.Lookup("id").Usage)
-		}
-		fmt.Fprintln(w, "")
-	}
-	os.Exit(2)
-}
-
-func setCommandFlags() {
-	for _, cmd := range commands {
-		cmd.flags.StringVar(&flagUser, "user", "", "--user=string:string - username:password")
-		switch {
-		case cmd.name == apiSend:
-			cmd.flags.StringVar(&flagFrom, "from", "", "--from=string - alphaname")
-			cmd.flags.StringVar(&flagText, "text", "", "--text=string - message of SMS")
-			cmd.flags.StringVar(&flagListTo, "to", "", "--to=string,... - list of phone numbers (comma-separated)")
-			cmd.flags.DurationVar(&flagTime, "lt", 0, "--lt=int - lifetime om SMS in minutes (default 0)")
-		case cmd.name == apiStatus:
-			cmd.flags.StringVar(&flagListID, "id", "", "--id=string,... - list of SMS ID from 'send' command (comma-separated)")
-		}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 	}
 }
 
-func runBalance() error {
+func runBalance(sms smsclub.SMSCluber) error {
 	bln, cre, err := sms.Balance()
 	if err != nil {
 		return err
@@ -146,13 +63,8 @@ func runBalance() error {
 	return nil
 }
 
-func runSend() error {
-	err := sms.LifeTime(flagTime)
-	if err != nil {
-		return err
-	}
-
-	res, err := sms.Send(flagFrom, flagText, strings.Split(flagListTo, ",")...)
+func runSend(sms smsclub.SMSCluber, text string, to ...string) error {
+	res, err := sms.Send(text, to...)
 	if err != nil {
 		return err
 	}
@@ -163,8 +75,8 @@ func runSend() error {
 	return nil
 }
 
-func runStatus() error {
-	res, err := sms.Status(strings.Split(flagListID, ",")...)
+func runStatus(sms smsclub.SMSCluber, id ...string) error {
+	res, err := sms.Status(id...)
 	if err != nil {
 		return err
 	}
@@ -173,18 +85,4 @@ func runStatus() error {
 		fmt.Println(res[i])
 	}
 	return nil
-}
-
-func splitUser(rawurl string) (string, string) {
-	var user, pass string
-	u, err := url.Parse(fmt.Sprintf("scheme://%s@host:port", rawurl))
-	if err == nil && u.User != nil {
-		user = u.User.Username()
-		pass, _ = u.User.Password()
-	}
-	return user, pass
-}
-
-func appName() string {
-	return filepath.Base(os.Args[0])
 }
