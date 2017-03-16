@@ -3,6 +3,7 @@ package smsclub
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -83,28 +84,26 @@ func (c *client) String() string {
 	return fmt.Sprintf("%s %s %s %d", c.user, c.token, c.sender, c.lifetime)
 }
 
-func (c *client) makeForm(f url.Values) url.Values {
-	if f == nil {
-		f = url.Values{}
+func (c *client) makeForm(v url.Values) url.Values {
+	if v == nil {
+		v = url.Values{}
 	}
 
-	f.Set("username", c.user)
-	f.Set("token", c.token)
+	v.Set("username", c.user)
+	v.Set("token", c.token)
 	if c.lifetime > 0 {
-		f.Set("lifetime", strconv.Itoa(int(c.lifetime.Minutes())))
+		v.Set("lifetime", strconv.Itoa(int(c.lifetime.Minutes())))
 	}
 
-	return f
+	return v
 }
 
 func (c *client) withRequest(m methodAPI, v url.Values) (*http.Request, error) {
-	f := c.makeForm(v)
-	r, err := http.NewRequest("POST", mapURL[m], strings.NewReader(f.Encode()))
+	v = c.makeForm(v)
+	r, err := http.NewRequest("GET", fmt.Sprintf("%s?%s", mapURL[m], v.Encode()), nil)
 	if err != nil {
 		return nil, err
 	}
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
 	return r, nil
 }
 
@@ -136,7 +135,14 @@ func (c *client) callAPI(r *http.Request) ([]string, error) {
 		r = r.WithContext(ctx)
 	}
 
-	res, err := http.DefaultClient.Do(r)
+	// this is workaround for
+	// https://trac.nginx.org/nginx/ticket/959
+	tr := &http.Transport{
+		TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+	}
+	cli := &http.Client{Transport: tr}
+
+	res, err := cli.Do(r)
 	if err != nil || res == nil {
 		return nil, err
 	}
