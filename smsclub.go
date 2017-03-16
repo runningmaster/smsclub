@@ -1,6 +1,7 @@
 package smsclub
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -11,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 type methodAPI int
@@ -178,17 +182,16 @@ func (c *client) Send(text string, to ...string) ([]string, error) {
 	//	toBase64 := func(s string) string {
 	//		return base64.StdEncoding.EncodeToString([]byte(s))
 	//	}
-	//	toWin1251 := func(s string) string {
-	//		b := new(bytes.Buffer)
-	//		w := transform.NewWriter(b, charmap.Windows1251.NewEncoder())
-	//		_, _ = w.Write([]byte(s))
-	//		return b.String()
-	//	}
+	toWin1251 := func(s string) string {
+		b := new(bytes.Buffer)
+		w := transform.NewWriter(b, charmap.Windows1251.NewEncoder())
+		_, _ = w.Write([]byte(s))
+		return b.String()
+	}
 
 	form := url.Values{
 		"from": []string{c.sender},
-		//"text": []string{toBase64(toWin1251(text))},
-		"text": []string{text},
+		"text": []string{toWin1251(text)},
 		"to":   []string{strings.Join(to, ";")},
 	}
 
