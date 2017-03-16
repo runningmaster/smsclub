@@ -47,7 +47,7 @@ type SMSCluber interface {
 	Send(text string, to ...string) ([]string, error)
 
 	// Status gets list of SMS identifiers and returns statuses for ones.
-	Status(ids ...string) ([]string, error)
+	Status(id ...string) ([]string, error)
 }
 
 // New returns SMSCluber interface. Minimal *must* options are User(), Token().
@@ -136,7 +136,12 @@ func (c *client) callAPI(r *http.Request) ([]string, error) {
 		r = r.WithContext(ctx)
 	}
 
-	res, err := http.DefaultClient.Do(r)
+	tr := &http.Transport{
+		TLSNextProto: nil,
+	}
+	cli := &http.Client{Transport: tr}
+
+	res, err := cli.Do(r)
 	if err != nil || res == nil {
 		return nil, err
 	}
@@ -198,9 +203,9 @@ func (c *client) Send(text string, to ...string) ([]string, error) {
 }
 
 // Status gets list of SMS identifiers and returns statuses for ones.
-func (c *client) Status(ids ...string) ([]string, error) {
+func (c *client) Status(id ...string) ([]string, error) {
 	form := url.Values{
-		"smscid": []string{strings.Join(ids, ";")},
+		"smscid": []string{strings.Join(id, ";")},
 	}
 
 	req, err := c.withRequest(mStatus, form)

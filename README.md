@@ -15,5 +15,5 @@ sms := smsclub.New(
 	smsclub.Token("user_token"),
 	smsclub.Sender("alpha_name"),
 )
-sms.Send("message text", "380673408275", "380975243263")
+sms.Send("Hello dudes!", "380673408275", "380975243263")
 ```
