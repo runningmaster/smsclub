@@ -10,7 +10,7 @@ $ go get -u github.com/runningmaster/smsclub
 
 Send SMS to friends:
 ```
-sms := smsclub.New(
+sms, _ := smsclub.New(
 	smsclub.User("user"),
 	smsclub.Token("user_token"),
 	smsclub.Sender("alpha_name"),
